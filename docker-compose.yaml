@@ -1,0 +1,11 @@
+services:
+  cvae-web:
+    image: vectorzhao/cvae-web:latest
+    container_name: cvae-web
+    ports:
+      - "3679:80"
+    environment:
+      API_BASE_URL: https://api.deepexo.eu.org/api
+      API_UPSTREAM_URL: https://api.deepexo.eu.org/api
+      API_REQUEST_BASE: /api
+    restart: unless-stopped
