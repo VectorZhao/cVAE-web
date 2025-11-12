@@ -125,8 +125,8 @@ function App() {
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
         <Stack spacing={4}>
           <Stack spacing={1} alignItems="center" textAlign="center">
-            <Typography variant="h3" gutterBottom>
-              cVAE Interior Explorer
+            <Typography variant="h4" gutterBottom>
+              DeepEXO-cVAE: Noise-Aware Inference of Exoplanet Interiors
             </Typography>
             <Typography color="text.secondary" maxWidth="720px">
               Visualise conditional VAE predictions for rocky exoplanet interiors. Craft scalar, batched, Gaussian, or file-based payloads and
