@@ -48,14 +48,14 @@ type FormTab = 'classic' | 'gaussian' | 'file'
 
 const FORM_TABS: Array<{ value: FormTab; label: string; helper: string }> = [
   {
-    value: 'classic',
-    label: 'Direct Input',
-    helper: 'Send scalar or batched JSON payloads via the single/multi prediction endpoints.',
-  },
-  {
     value: 'gaussian',
     label: 'Gaussian Sampling',
     helper: 'Provide value/std pairs to propagate observational uncertainty (noise-aware mode).',
+  },
+  {
+    value: 'classic',
+    label: 'Direct Input',
+    helper: 'Send scalar or batched JSON payloads via the single/multi prediction endpoints.',
   },
   {
     value: 'file',
@@ -72,23 +72,15 @@ const formatOutputDisplay = (key: string) => {
   if (!detail?.symbol?.length) {
     return detail?.unit ? `${base} (${detail.unit})` : base
   }
-  const symbolText = detail.symbol
-    .map((segment) =>
-      segment.subscript ? `${segment.text}` : segment.italic ? `${segment.text}` : segment.text,
-    )
-    .join('')
   const display = detail.symbol
-    .map((segment) => (segment.subscript ? `${segment.text}` : segment.text))
+    .map((segment) => segment.text)
     .join('')
-  if (detail.unit) {
-    return `${display} (${detail.unit})`
-  }
-  return display
+  return detail.unit ? `${display} (${detail.unit})` : display
 }
 
 
 function App() {
-  const [activeForm, setActiveForm] = useState<FormTab>('classic')
+  const [activeForm, setActiveForm] = useState<FormTab>('gaussian')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rawResponse, setRawResponse] = useState<PredictionResponse | null>(null)
