@@ -69,7 +69,21 @@ const sanitizeLabel = (value: string) => value.replace(/\s*\(.*?\)\s*$/, '')
 const formatOutputDisplay = (key: string) => {
   const detail = PARAMETER_DETAILS.find((item) => item.id === key)
   const base = sanitizeLabel(key)
-  return detail?.unit ? `${base} (${detail.unit})` : base
+  if (!detail?.symbol?.length) {
+    return detail?.unit ? `${base} (${detail.unit})` : base
+  }
+  const symbolText = detail.symbol
+    .map((segment) =>
+      segment.subscript ? `${segment.text}` : segment.italic ? `${segment.text}` : segment.text,
+    )
+    .join('')
+  const display = detail.symbol
+    .map((segment) => (segment.subscript ? `${segment.text}` : segment.text))
+    .join('')
+  if (detail.unit) {
+    return `${display} (${detail.unit})`
+  }
+  return display
 }
 
 
@@ -251,7 +265,7 @@ function App() {
                 Mass/radius fields use Earth units (training window 0.1–10 M⊕) while Fe/Mg and Si/Mg are bulk molar ratios. In Gaussian mode pass relative standard deviations within [0, 1] to describe observational noise.
               </Typography>
               <Typography variant="body2" color="text.secondary" maxWidth="720px" sx={{ mt: 1 }}>
-                Outputs · {outputDisplayTokens.join(' · ')}
+                Outputs: {outputDisplayTokens.join(', ')}
               </Typography>
               {lastUpdated && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>

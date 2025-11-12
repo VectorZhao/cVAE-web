@@ -107,7 +107,7 @@ const fieldDefinitions: GaussianField[] = [
 export default function GaussianPayloadForm({ isLoading, onSubmit }: GaussianPayloadFormProps) {
   const { control, register, handleSubmit, watch } = useForm<GaussianFormValues>({
     defaultValues: {
-      sample_num: 1000,
+      sample_num: 500,
       times: 20,
       cases: [DEFAULT_CASE],
     },
