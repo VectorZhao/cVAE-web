@@ -42,7 +42,7 @@ import { normalizePredictionCases } from './utils/distributions'
 import type { PredictionCase, ParameterSamples } from './utils/distributions'
 import { toPng } from 'html-to-image'
 import { PARAMETER_DETAILS, PARAMETER_KEYS } from './constants'
-import type { ParameterKey } from './constants'
+import type { ParameterKey, ParameterDetail, SymbolSegment } from './constants'
 
 type FormTab = 'classic' | 'gaussian' | 'file'
 
@@ -66,16 +66,57 @@ const FORM_TABS: Array<{ value: FormTab; label: string; helper: string }> = [
 
 const sanitizeLabel = (value: string) => value.replace(/\s*\(.*?\)\s*$/, '')
 
-const formatOutputDisplay = (key: string) => {
-  const detail = PARAMETER_DETAILS.find((item) => item.id === key)
-  const base = sanitizeLabel(key)
+const SUPERSCRIPT_MAP: Record<string, string> = {
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+  '+': '⁺',
+  '-': '⁻',
+}
+
+const toSuperscript = (value: string) => value.split('').map((char) => SUPERSCRIPT_MAP[char] || char).join('')
+
+const formatUnitText = (unit: string) =>
+  unit.replace(/(\d+)\^(\d+)/g, (_, base: string, exponent: string) => `${base}${toSuperscript(exponent)}`)
+
+const renderSymbolSegments = (detail: ParameterDetail | undefined, fallback: string) => {
   if (!detail?.symbol?.length) {
-    return detail?.unit ? `${base} (${detail.unit})` : base
+    return (
+      <Box component="span" sx={{ fontStyle: 'normal' }}>
+        {sanitizeLabel(fallback)}
+      </Box>
+    )
   }
-  const display = detail.symbol
-    .map((segment) => segment.text)
-    .join('')
-  return detail.unit ? `${display} (${detail.unit})` : display
+  return detail.symbol.map((segment: SymbolSegment, index) => (
+    <Box
+      component="span"
+      key={`${segment.text}-${index}`}
+      sx={{
+        fontStyle: segment.italic ? 'italic' : 'normal',
+        verticalAlign: segment.subscript ? 'sub' : 'baseline',
+        fontSize: segment.subscript ? '0.75em' : '1em',
+        ml: index === 0 ? 0 : 0.1,
+      }}
+    >
+      {segment.text}
+    </Box>
+  ))
+}
+
+const renderUnitInline = (unit?: string) => {
+  if (!unit) return null
+  return (
+    <Box component="span" sx={{ ml: 0.25 }}>
+      ({formatUnitText(unit)})
+    </Box>
+  )
 }
 
 
@@ -230,7 +271,24 @@ function App() {
   const activeSamples: ParameterSamples = activeCase?.parameters || {}
   const formattedResponse = useMemo(() => (rawResponse ? JSON.stringify(rawResponse, null, 2) : ''), [rawResponse])
   const currentTabHelper = FORM_TABS.find((tab) => tab.value === activeForm)?.helper ?? ''
-  const outputDisplayTokens = useMemo(() => PARAMETER_KEYS.map((key) => formatOutputDisplay(key)), [])
+  const outputDisplayNodes = useMemo(
+    () =>
+      PARAMETER_KEYS.map((key, index) => {
+        const detail = PARAMETER_DETAILS.find((item) => item.id === key)
+        return (
+          <Box component="span" key={`output-inline-${key}`} sx={{ display: 'inline-flex', alignItems: 'baseline' }}>
+            {renderSymbolSegments(detail, key)}
+            {renderUnitInline(detail?.unit)}
+            {index < PARAMETER_KEYS.length - 1 && (
+              <Box component="span" sx={{ mx: 0.25 }}>
+                ,
+              </Box>
+            )}
+          </Box>
+        )
+      }),
+    [],
+  )
   const expandedSamples = expandedParameter ? activeSamples[expandedParameter] || [] : []
 
   useEffect(() => {
@@ -257,7 +315,7 @@ function App() {
                 Mass/radius fields use Earth units (training window 0.1–10 M⊕) while Fe/Mg and Si/Mg are bulk molar ratios. In Gaussian mode pass relative standard deviations within [0, 1] to describe observational noise.
               </Typography>
               <Typography variant="body2" color="text.secondary" maxWidth="720px" sx={{ mt: 1 }}>
-                Outputs: {outputDisplayTokens.join(', ')}
+                Outputs: {outputDisplayNodes}
               </Typography>
               {lastUpdated && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
