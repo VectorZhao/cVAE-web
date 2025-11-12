@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { Box, Card, CardContent, Stack, Typography } from '@mui/material'
+import { memo, type ReactNode } from 'react'
+import { Box, Card, CardContent, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -7,20 +7,83 @@ import {
   BarElement,
   PointElement,
   LineElement,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 import type { ChartOptions } from 'chart.js'
 import { PARAMETER_DETAILS } from '../../constants'
-import type { ParameterKey } from '../../constants'
+import type { ParameterKey, ParameterDetail, SymbolSegment } from '../../constants'
 import { buildHistogram, computeStats } from '../../utils/distributions'
+import ZoomInIcon from '@mui/icons-material/ZoomIn'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Tooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ChartTooltip, Legend)
+
+const sanitizeParameterId = (value: string) => value.replace(/\s*\(.*?\)\s*$/, '')
+
+const renderSymbolSegment = (segment: SymbolSegment, index: number) => (
+  <Box
+    component="span"
+    key={`${segment.text}-${index}`}
+    sx={{
+      fontStyle: segment.italic ? 'italic' : 'normal',
+      verticalAlign: segment.subscript ? 'sub' : 'baseline',
+      fontSize: segment.subscript ? '0.75em' : '1em',
+      ml: index === 0 ? 0 : 0.2,
+    }}
+  >
+    {segment.text}
+  </Box>
+)
+
+const renderSymbol = (meta: ParameterDetail | undefined, fallback: string): ReactNode => {
+  if (!meta?.symbol || !meta.symbol.length) {
+    return sanitizeParameterId(fallback)
+  }
+  return meta.symbol.map((segment, index) => renderSymbolSegment(segment, index))
+}
+
+const SUPERSCRIPT_MAP: Record<string, string> = {
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+  '+': '⁺',
+  '-': '⁻',
+}
+
+const toSuperscript = (value: string) => value.split('').map((char) => SUPERSCRIPT_MAP[char] || char).join('')
+
+const formatUnitText = (unit: string) =>
+  unit.replace(/(\d+)\^(\d+)/g, (_, base: string, exponent: string) => `${base}${toSuperscript(exponent)}`)
+
+const renderUnit = (unit?: string, options?: { compact?: boolean; withMargin?: boolean }) => {
+  if (!unit) return null
+  const formatted = formatUnitText(unit)
+  return (
+    <Box
+      component="span"
+      sx={{
+        ml:
+          options?.withMargin === false ? 0 : options?.compact ? 0.5 : 0.5,
+        fontSize: options?.compact ? '0.4em' : 'inherit',
+      }}
+    >
+      {formatted}
+    </Box>
+  )
+}
 
 interface ParameterCardProps {
   parameter: ParameterKey
   samples: number[]
+  onExpand?: (parameter: ParameterKey) => void
 }
 
 const chartOptions: ChartOptions<'line'> = {
@@ -52,60 +115,95 @@ const chartOptions: ChartOptions<'line'> = {
   },
 }
 
-function ParameterCard({ parameter, samples }: ParameterCardProps) {
+function ParameterCard({ parameter, samples, onExpand }: ParameterCardProps) {
   const meta = PARAMETER_DETAILS.find((item) => item.id === parameter)
-  const stats = computeStats(samples)
-  const histogram = buildHistogram(samples)
 
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent>
-        <Stack spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary">
-            {meta?.label || parameter}
-          </Typography>
-          {samples.length ? (
-            <>
-              <Typography variant="h4" color="primary.main">
-                {stats ? stats.mean.toFixed(3) : '--'}
+        <Stack spacing={1.5}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">
+                {meta?.label || sanitizeParameterId(parameter)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" component="div">
+                {renderSymbol(meta, parameter)}
                 {meta?.unit ? (
-                  <Box component="span" sx={{ ml: 0.5, fontSize: '0.4em', letterSpacing: '0.08em' }}>
-                    {meta.unit}
+                  <Box component="span" sx={{ ml: 0.5 }}>
+                    (
+                    {renderUnit(meta.unit, { withMargin: false })}
+                    )
                   </Box>
                 ) : null}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                μ ± σ: {stats?.mean.toFixed(3)} ± {stats?.std.toFixed(3)} | min/max: {stats?.min.toFixed(3)} /{' '}
-                {stats?.max.toFixed(3)}
-              </Typography>
-              <Box sx={{ height: 240 }}>
-                <Line
-                  data={{
-                    labels: histogram.labels,
-                    datasets: [
-                      {
-                        label: `${parameter} density`,
-                        data: histogram.counts,
-                        borderColor: meta?.color || '#8adfff',
-                        backgroundColor: 'rgba(138, 223, 255, 0.18)',
-                        borderWidth: 2,
-                        tension: 0.35,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={chartOptions}
-                />
-              </Box>
-            </>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              No samples returned by API.
-            </Typography>
-          )}
+            </Box>
+            {onExpand ? (
+              <Tooltip title="View fullscreen">
+                <span>
+                  <IconButton size="small" onClick={() => onExpand(parameter)}>
+                    <ZoomInIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : null}
+          </Stack>
+          <ParameterInsight parameter={parameter} samples={samples} />
         </Stack>
       </CardContent>
     </Card>
+  )
+}
+
+export function ParameterInsight({ parameter, samples }: Pick<ParameterCardProps, 'parameter' | 'samples'>) {
+  const meta = PARAMETER_DETAILS.find((item) => item.id === parameter)
+  const stats = computeStats(samples)
+  const histogram = buildHistogram(samples)
+
+  if (!samples.length || !stats) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        No samples returned for this parameter.
+      </Typography>
+    )
+  }
+
+  const formatValue = (value: number | undefined) => (Number.isFinite(value) ? value?.toFixed(3) : '--')
+
+  return (
+    <Stack spacing={1.5}>
+      <Box>
+        <Typography variant="h4" color="primary.main">
+          {formatValue(stats.mean)}
+          {renderUnit(meta?.unit, { compact: true })}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          μ = {formatValue(stats.mean)} ｜ σ = {formatValue(stats.std)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          16–84% : {formatValue(stats.p16)} – {formatValue(stats.p84)}
+        </Typography>
+      </Box>
+      <Box sx={{ height: 240 }}>
+        <Line
+          data={{
+            labels: histogram.labels,
+            datasets: [
+              {
+                label: `${parameter} density`,
+                data: histogram.counts,
+                borderColor: meta?.color || '#8adfff',
+                backgroundColor: 'rgba(138, 223, 255, 0.18)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+              },
+            ],
+          }}
+          options={chartOptions}
+        />
+      </Box>
+    </Stack>
   )
 }
 

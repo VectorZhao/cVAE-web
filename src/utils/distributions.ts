@@ -16,6 +16,8 @@ export interface ParameterStats {
   mean: number
   median: number
   std: number
+  p16: number
+  p84: number
 }
 
 export interface HistogramSeries {
@@ -120,7 +122,9 @@ export function computeStats(samples: number[]): ParameterStats | null {
   const variance =
     sorted.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (count === 1 ? 1 : count - 1)
   const std = Math.sqrt(variance)
-  return { count, min, max, mean, median, std }
+  const p16 = getPercentile(sorted, 0.16)
+  const p84 = getPercentile(sorted, 0.84)
+  return { count, min, max, mean, median, std, p16, p84 }
 }
 
 export function buildHistogram(samples: number[], bins = 20): HistogramSeries {
@@ -148,4 +152,16 @@ export function buildHistogram(samples: number[], bins = 20): HistogramSeries {
 
 export function getParameterLabel(param: ParameterKey) {
   return PARAMETER_DETAILS.find((item) => item.id === param)?.label || param
+}
+
+function getPercentile(values: number[], percentile: number) {
+  if (!values.length) return NaN
+  const index = (values.length - 1) * percentile
+  const lower = Math.floor(index)
+  const upper = Math.ceil(index)
+  if (lower === upper) {
+    return values[lower]
+  }
+  const weight = index - lower
+  return values[lower] * (1 - weight) + values[upper] * weight
 }

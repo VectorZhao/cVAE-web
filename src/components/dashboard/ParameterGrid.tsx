@@ -6,9 +6,10 @@ import ParameterCard from './ParameterCard'
 
 interface ParameterGridProps {
   samples: ParameterSamples
+  onExpand?: (parameter: ParameterKey) => void
 }
 
-export default function ParameterGrid({ samples }: ParameterGridProps) {
+export default function ParameterGrid({ samples, onExpand }: ParameterGridProps) {
   return (
     <Box
       sx={{
@@ -22,7 +23,12 @@ export default function ParameterGrid({ samples }: ParameterGridProps) {
       }}
     >
       {PARAMETER_KEYS.map((key) => (
-        <ParameterCard key={key} parameter={key as ParameterKey} samples={samples[key as ParameterKey] || []} />
+        <ParameterCard
+          key={key}
+          parameter={key as ParameterKey}
+          samples={samples[key as ParameterKey] || []}
+          onExpand={onExpand}
+        />
       ))}
     </Box>
   )

@@ -1,8 +1,22 @@
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
-import { Box, Button, FormControl, IconButton, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { DEFAULT_SAMPLE_TIMES } from '../../constants'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 
 type ClassicEndpoint = 'single_prediction' | 'multi_prediction'
 
@@ -69,7 +83,12 @@ export default function ClassicPayloadForm({ isLoading, onSubmit }: ClassicPaylo
     onSubmit({ endpoint: values.endpoint, request })
   }
 
-  const handleAddCase = () => append({ ...DEFAULT_CASE })
+  const watchedCases = watch('cases')
+
+  const handleAddCase = () => {
+    const last = watchedCases?.[watchedCases.length - 1]
+    append(last ? { ...last } : { ...DEFAULT_CASE })
+  }
 
   return (
     <Box component="form" onSubmit={handleSubmit(submitHandler)}>
@@ -94,15 +113,34 @@ export default function ClassicPayloadForm({ isLoading, onSubmit }: ClassicPaylo
         />
 
         <TextField
-          label="Times (samples per case)"
+          label="Model draws per case"
           type="number"
           inputProps={{ min: 1, max: 500 }}
           {...register('times', { valueAsNumber: true })}
+          helperText="Posterior samples per case"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <Tooltip title="Higher values smooth results but increase runtime">
+                  <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                </Tooltip>
+              </InputAdornment>
+            ),
+          }}
         />
 
-        <Typography variant="body2" color="text.secondary">
-          Mass and radius are expressed in Earth units (mass training range 0.1 – 10). Fe/Mg and Si/Mg correspond to bulk molar ratios.
-        </Typography>
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            backgroundColor: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Mass/radius use Earth units, while Fe/Mg and Si/Mg are bulk molar ratios. Keep masses within the 0.1–10 M⊕ training window for best performance.
+          </Typography>
+        </Box>
 
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="subtitle1">Planet Cases ({watch('cases')?.length || 0})</Typography>
@@ -112,7 +150,15 @@ export default function ClassicPayloadForm({ isLoading, onSubmit }: ClassicPaylo
         </Stack>
 
         {fields.map((field, index) => (
-          <Box key={field.id} sx={{ p: 2, borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
+          <Box
+            key={field.id}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              border: '1px solid rgba(255,255,255,0.08)',
+              backgroundColor: 'rgba(8, 12, 28, 0.65)',
+            }}
+          >
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2">Case {index + 1}</Typography>
               <IconButton
