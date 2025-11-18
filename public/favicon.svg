@@ -1,0 +1,23 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="planetCore" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#d7f3ff" />
+      <stop offset="45%" stop-color="#9cccf6" />
+      <stop offset="100%" stop-color="#5a7ff0" />
+    </radialGradient>
+    <linearGradient id="ringGlow" x1="0%" y1="30%" x2="100%" y2="70%">
+      <stop offset="0%" stop-color="#7ef3ff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#c792ff" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#050915" />
+  <circle cx="32" cy="30" r="18" fill="url(#planetCore)" />
+  <path
+    d="M8 36c6-6 18-11 24-11s18 5 24 11c-6 6-18 11-24 11S14 42 8 36z"
+    fill="none"
+    stroke="url(#ringGlow)"
+    stroke-width="4.5"
+    stroke-linecap="round"
+  />
+  <circle cx="40" cy="22" r="4" fill="#ecf5ff" opacity="0.75" />
+</svg>

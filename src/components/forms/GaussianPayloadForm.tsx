@@ -275,7 +275,7 @@ export default function GaussianPayloadForm({ isLoading, onSubmit }: GaussianPay
         ))}
 
         <Button type="submit" variant="contained" size="large" disabled={isLoading}>
-          {isLoading ? 'Sampling…' : 'Send Gaussian payload'}
+          {isLoading ? 'Sampling…' : 'Run posterior inference'}
         </Button>
       </Stack>
     </Box>

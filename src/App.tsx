@@ -317,6 +317,22 @@ function App() {
               <Typography variant="body2" color="text.secondary" maxWidth="720px" sx={{ mt: 1 }}>
                 Outputs: {outputDisplayNodes}
               </Typography>
+              <Box
+                role="alert"
+                sx={{
+                  mt: 2,
+                  px: 2,
+                  py: 1.5,
+                  textAlign: 'center',
+                  borderRadius: 2,
+                  backgroundColor: 'rgba(255, 193, 7, 0.16)',
+                  border: '1px solid rgba(255, 193, 7, 0.35)',
+                  color: '#ffd180',
+                  fontWeight: 500,
+                }}
+              >
+                ⚠️ Model note: Water-layer parameters (WRF, WMF) are weakly constrained, and their inferred values may be unreliable. Please interpret these results with caution.
+              </Box>
               {lastUpdated && (
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                   Last run · {lastUpdated.toLocaleTimeString()} — API endpoint: {DISPLAY_API_URL}
